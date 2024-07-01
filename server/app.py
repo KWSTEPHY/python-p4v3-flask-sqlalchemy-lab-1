@@ -1,4 +1,3 @@
-# server/app.py
 #!/usr/bin/env python3
 
 from flask import Flask, make_response, jsonify
@@ -18,42 +17,35 @@ db.init_app(app)
 @app.route('/')
 def index():
     body = {'message': 'Flask SQLAlchemy Lab 1'}
-    return make_response(body, 200)
+    return make_response(jsonify(body), 200)
 
-# Add views here
-@app.route('/earthquakes/<int:id>')
-def earthquake_by_id(id):
-    earthquake = Earthquake.query.filter(Earthquake.id == id).first()
-    if earthquake:
-        body = {
-            'id': earthquake.id,
-            'magnitude': earthquake.magnitude,
-            'location': earthquake.location,
-            'year': earthquake.year
-        }
-        status = 200
-    else:
-        body = {'message': f'Earthquake {id} not found.'}
-        status = 404
 
-    return make_response(body, status)
+@app.route('/earthquakes/<int:id>', methods=['GET'])
+def get_earthquake(id):
+    earthquake = Earthquake.query.get(id)
+    if earthquake is None:
+        return jsonify({"message": f"Earthquake {id} not found."}), 404
+    return jsonify({
+        "id": earthquake.id,
+        "location": earthquake.location,
+        "magnitude": earthquake.magnitude,
+        "year": earthquake.year
+    }), 200
 
-@app.route('/earthquakes/magnitude/<float:magnitude>')
-def earthquake_by_magnitude(magnitude):
+
+@app.route('/earthquakes/magnitude/<float:magnitude>', methods=['GET'])
+def get_earthquakes_by_magnitude(magnitude):
     earthquakes = Earthquake.query.filter(Earthquake.magnitude >= magnitude).all()
-    quakes_list = [
-        {
+    return jsonify({
+        "count": len(earthquakes),
+        "quakes": [{
             "id": quake.id,
             "location": quake.location,
             "magnitude": quake.magnitude,
             "year": quake.year
-        } for quake in earthquakes
-    ]
-    response = {
-        "count": len(quakes_list),
-        "quakes": quakes_list
-    }
-    return jsonify(response), 200
+        } for quake in earthquakes]
+    }), 200
 
-if __name__ == '__main__':
+
+if __name__ == '_main_':
     app.run(port=5555, debug=True)
